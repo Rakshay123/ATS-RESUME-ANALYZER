@@ -1,0 +1,9 @@
+{
+  "name": "resume-analyzer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "frontend-build": "cd frontend && npm install && npm run build",
+    "backend-start": "cd backend && npm install && npm run start"
+  }
+}
