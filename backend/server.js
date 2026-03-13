@@ -14,14 +14,32 @@ const app = express();
 const mongoUrl = process.env.MONGO_DB_URL;
 if (mongoUrl) {
   mongoose.connect(mongoUrl)
-    .then(() => console.log("MongoDB connected successfully"))
-    .catch(err => console.error("MongoDB connection error:", err.message));
+    .then(() => console.log("✅ MongoDB connected successfully to:", mongoUrl.split('@')[1] || "Hidden URL"))
+    .catch(err => {
+      console.error("❌ MongoDB connection error:", err.message);
+      console.error("Check if your IP address is whitelisted in MongoDB Atlas or if the URL is correct.");
+    });
 } else {
-  console.warn("MONGO_DB_URL not set. Running without DB.");
+  console.warn("⚠️ MONGO_DB_URL not set. Running without DB.");
 }
+
+// Request Logger
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
 app.use(cors());
 app.use(express.json());
+
+// Health Check
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    dbConnected: mongoose.connection.readyState === 1
+  });
+});
 
 const authRoutes = require("./routes/auth");
 const resumeRoutes = require("./routes/resume");

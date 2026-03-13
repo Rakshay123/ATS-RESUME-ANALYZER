@@ -10,6 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "smart-resume-fallback-secret";
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
+    console.log(`Register attempt for: ${email}`);
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: "User already exists" });
 
@@ -28,15 +29,21 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(`Login attempt for: ${email}`);
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    if (!user) {
+      console.log(`Login failed: User not found (${email})`);
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "7d" });
+    console.log(`Login successful for: ${email}`);
     res.json({ token, user: { id: user._id, name: user.name, email } });
   } catch (err) {
+    console.error("Login Error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 });
