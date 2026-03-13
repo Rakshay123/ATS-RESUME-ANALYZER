@@ -16,12 +16,24 @@ router.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     user = new User({ name, email, password: hashedPassword });
+    
+    // Check DB connection before saving
+    if (mongoose.connection.readyState !== 1) {
+      console.error("❌ Registration failed: Database not connected");
+      return res.status(503).json({ message: "Database is currently offline. Please try again in 1 minute." });
+    }
+
     await user.save();
+    console.log(`✅ Registration successful for: ${email}`);
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "7d" });
     res.status(201).json({ token, user: { id: user._id, name, email } });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ Registration Error:", err.message);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: err.message });
+    }
+    res.status(500).json({ message: "Internal server error during registration" });
   }
 });
 
